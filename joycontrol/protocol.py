@@ -331,6 +331,8 @@ class ControllerProtocol(BaseProtocol):
                     except Exception as err:
                         if ("reset" in str(err)):
                             quit()
+                        if ("refused" in str(err)):
+                            quit()
                         logger.exception(err)
 
                 self._0x30_input_report_sender.add_done_callback(callback)
@@ -420,4 +422,3 @@ class ControllerProtocol(BaseProtocol):
         await self.write(input_report)
 
         self.sig_set_player_lights.set()
-
