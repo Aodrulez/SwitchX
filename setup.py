@@ -8,8 +8,8 @@ print("( Adds support for XBOX360 controllers to Nintendo Switch )\n")
 if not os.geteuid() == 0:
 	raise PermissionError(' [-] Script must be run as root/sudo!')
 print "[+] Installing required packages/libraries & setting up everything!\n\n"
-os.system("apt-get update")
-os.system("apt-get install -y python3 python3-pip xboxdrv python3-dbus supervisor")
+os.system("apt-get -o Acquire::ForceIPv4=true update")
+os.system("apt-get -o Acquire::ForceIPv4=true install -y python3 python3-pip xboxdrv python3-dbus supervisor")
 os.system("pip3 install hid aioconsole dbus-python")
 os.system('echo "[program:switchX]" > /etc/supervisor/conf.d/switchX.conf')
 os.system('echo "priority=10" >> /etc/supervisor/conf.d/switchX.conf')
