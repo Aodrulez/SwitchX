@@ -28,7 +28,7 @@ This is should automatically install all of the dependencies as well as setup th
 ### Usage:
 - Once setup is ready, Raspberry Pi Zero should automatically connect to Nintendo Switch when you enter pairing screen (Home -> Controllers -> Change Grip/Order)
 - Once paired, the controller should work exactly like the Pro Wireless Controller.
-- You'll have to again pair the controller each time after the Switch goes into Sleep mode though
+- Pairing should only be required the first time. Henceforth, you'll only need to wake up the Switch console & SwitchX should automatically reconnect.
 
 ### Key Mapping
 XBOX360 Controller's keys are mapped as follows: 
