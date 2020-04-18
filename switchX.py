@@ -27,10 +27,10 @@ if not os.geteuid() == 0:
 	raise PermissionError(' [-] Script must be run as root!')
 
 
-async def _main(controller, reconnect_bt_addr=None, capture_file=None, spi_flash=None, device_id=None):
+async def _main(controller, reconnect_bt_addr, spi_flash):
 	factory = controller_protocol_factory(controller, spi_flash=spi_flash)
 	ctl_psm, itr_psm = 17, 19
-	transport, protocol = await create_hid_server(factory, reconnect_bt_addr=reconnect_bt_addr, ctl_psm=ctl_psm,itr_psm=itr_psm, capture_file=capture_file, device_id=device_id)
+	transport, protocol = await create_hid_server(factory, ctl_psm=17, itr_psm=19,  device_id=None, reconnect_bt_addr=reconnect_bt_addr)
 	await letItRain(protocol.get_controller_state())
 	await transport.close()
 
@@ -266,9 +266,6 @@ if switchBTADDR != None:
 	print(" [+] Connecting to paired Switch Console.")
 
 loop = asyncio.get_event_loop()
-loop.run_until_complete(_main(controller,
-                  reconnect_bt_addr=switchBTADDR,
-                  spi_flash=spi_flash,
-                  device_id=None))
+loop.run_until_complete(_main(controller,switchBTADDR,spi_flash))
 
 
