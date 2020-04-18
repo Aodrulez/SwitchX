@@ -203,7 +203,7 @@ class SubCommand(Enum):
     REQUEST_DEVICE_INFO = 0x02
     SET_INPUT_REPORT_MODE = 0x03
     TRIGGER_BUTTONS_ELAPSED_TIME = 0x04
-    SET_HCI_STATE = 0x6
+    SET_HCI_STATE = 0x06                    # Added for switchX
     SET_SHIPMENT_STATE = 0x08
     SPI_FLASH_READ = 0x10
     SET_NFC_IR_MCU_CONFIG = 0x21
@@ -211,11 +211,9 @@ class SubCommand(Enum):
     SET_PLAYER_LIGHTS = 0x30
     ENABLE_6AXIS_SENSOR = 0x40
     ENABLE_VIBRATION = 0x48
-    
 
 
 class OutputReportID(Enum):
-    NOT_SURE    = 0x0
     SUB_COMMAND = 0x01
     RUMBLE_ONLY = 0x10
 
@@ -254,11 +252,9 @@ class OutputReport:
         return self.data[3:11]
 
     def get_sub_command(self):
-        #print("in get_sub_command")
         if len(self.data) < 12:
             return None
         try:
-            #print("Found command : "+str(self.data[11]))
             return SubCommand(self.data[11])
         except ValueError:
             raise NotImplementedError(f'Sub command id {hex(self.data[11])} not implemented')
@@ -303,4 +299,3 @@ class OutputReport:
 
     def __bytes__(self):
         return bytes(self.data)
-

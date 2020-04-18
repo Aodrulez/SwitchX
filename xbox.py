@@ -71,7 +71,8 @@ class Joystick:
         # if the controller wasn't found, then halt
         if not found:
             self.close()
-            raise IOError('Unable to detect Xbox controller/receiver - Run python as sudo')
+            raise IOError(' [-] Unable to detect Xbox controller/receiver.')
+            quit()
 
     """Used by all Joystick methods to read the most recent events from xboxdrv.
     The refreshRate determines the maximum frequency with which events are checked.

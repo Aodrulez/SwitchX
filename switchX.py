@@ -12,16 +12,25 @@ from joycontrol.controller_state import ControllerState, button_push, StickState
 from joycontrol.protocol import controller_protocol_factory, Controller
 from joycontrol.server import create_hid_server
 
+# For debugging:
+#logger = logging.getLogger(__name__)
+#log.configure()
+
+
+# terminate any running instances of Xbobdrv
+os.system("pkill xboxdrv")
 j=xbox.Joystick()
 currentButton=""
 controller = Controller.PRO_CONTROLLER
+switchBTADDR=None
 if not os.geteuid() == 0:
 	raise PermissionError(' [-] Script must be run as root!')
 
 
-async def _main(controller, capture_file=None, spi_flash=None):
+async def _main(controller, reconnect_bt_addr=None, capture_file=None, spi_flash=None, device_id=None):
 	factory = controller_protocol_factory(controller, spi_flash=spi_flash)
-	transport, protocol = await create_hid_server(factory, 17, 19, capture_file=capture_file)
+	ctl_psm, itr_psm = 17, 19
+	transport, protocol = await create_hid_server(factory, reconnect_bt_addr=reconnect_bt_addr, ctl_psm=ctl_psm,itr_psm=itr_psm, capture_file=capture_file, device_id=device_id)
 	await letItRain(protocol.get_controller_state())
 	await transport.close()
 
@@ -237,7 +246,29 @@ print("\t\t    (c) Aodrulez\n")
 print("( Adds support for XBOX360 controllers to Nintendo Switch )\n")
 with open("controller.bin", 'rb') as spi_flash_file:
 		spi_flash = spi_flash_file.read()
+
+# Check for config file
+try:
+    configFile = open("config.ini")
+    temp=configFile.readline().rstrip()				# First line should always be mac address of a paired console
+    if "SwitchBTADDR" in temp:
+    	temp = temp.split("=")
+    	switchBTADDR = str(temp[1])
+    	print(" [+] Paired to Switch with BT address : "+ switchBTADDR)
+    configFile.close()
+except IOError:
+    print(" [+] Initiating pairing with a Switch Console.")
+    switchBTADDR = None
+
+    
+
+if switchBTADDR != None:
+	print(" [+] Connecting to paired Switch Console.")
+
 loop = asyncio.get_event_loop()
-loop.run_until_complete(_main(controller,spi_flash=spi_flash))
+loop.run_until_complete(_main(controller,
+                  reconnect_bt_addr=switchBTADDR,
+                  spi_flash=spi_flash,
+                  device_id=None))
 
 

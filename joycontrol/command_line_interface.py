@@ -4,8 +4,37 @@ import logging
 from aioconsole import ainput
 
 from joycontrol.controller_state import button_push, ControllerState
+from joycontrol.transport import NotConnectedError
 
 logger = logging.getLogger(__name__)
+
+
+def _print_doc(string):
+    """
+    Attempts to remove common white space at the start of the lines in a doc string
+    to unify the output of doc strings with different indention levels.
+
+    Keeps whitespace lines intact.
+
+    :param fun: function to print the doc string of
+    """
+    lines = string.split('\n')
+    if lines:
+        prefix_i = 0
+        for i, line_0 in enumerate(lines):
+            # find non empty start lines
+            if line_0.strip():
+                # traverse line and stop if character mismatch with other non empty lines
+                for prefix_i, c in enumerate(line_0):
+                    if not c.isspace():
+                        break
+                    if any(lines[j].strip() and (prefix_i >= len(lines[j]) or c != lines[j][prefix_i])
+                           for j in range(i+1, len(lines))):
+                        break
+                break
+
+        for line in lines:
+            print(line[prefix_i:] if line.strip() else line)
 
 
 class ControllerCLI:
@@ -14,11 +43,17 @@ class ControllerCLI:
         self.commands = {}
 
     async def cmd_help(self):
-        print('Buttons can be used as commands: ', ', '.join(self.controller_state.button_state.get_available_buttons()))
-
+        print('Button commands:')
+        print(', '.join(self.controller_state.button_state.get_available_buttons()))
+        print()
+        print('Commands:')
         for name, fun in inspect.getmembers(self):
             if name.startswith('cmd_') and fun.__doc__:
-                print(fun.__doc__)
+                _print_doc(fun.__doc__)
+
+        for name, fun in self.commands.items():
+            if fun.__doc__:
+                _print_doc(fun.__doc__)
 
         print('Commands can be chained using "&&"')
         print('Type "exit" to close.')
@@ -61,7 +96,7 @@ class ControllerCLI:
         stick - Command to set stick positions.
         :param side: 'l', 'left' for left control stick; 'r', 'right' for right control stick
         :param direction: 'center', 'up', 'down', 'left', 'right';
-               'h', 'horizontal' or 'v', 'vertical' to set the value directly to the "value" argument
+                          'h', 'horizontal' or 'v', 'vertical' to set the value directly to the "value" argument
         :param value: horizontal or vertical value
         """
         if side in ('l', 'left'):
@@ -103,7 +138,7 @@ class ControllerCLI:
                         print(e)
                 elif cmd in self.commands:
                     try:
-                        result = await self.commands[cmd](self, *args)
+                        result = await self.commands[cmd](*args)
                         if result:
                             print(result)
                     except Exception as e:
@@ -116,4 +151,8 @@ class ControllerCLI:
             if buttons_to_push:
                 await button_push(self.controller_state, *buttons_to_push)
             else:
-                await self.controller_state.send()
+                try:
+                    await self.controller_state.send()
+                except NotConnectedError:
+                    logger.info('Connection was lost.')
+                    return

@@ -4,18 +4,6 @@ from joycontrol import utils
 from joycontrol.controller import Controller
 from joycontrol.memory import FlashMemory
 
-# read both left & right joycon flash dump
-rspi_flash = None
-lspi_flash = None
-with open("controller.bin", 'rb') as rspi_flash_file:
-    rspi_flash = rspi_flash_file.read()
-    rspi_flash = FlashMemory(spi_flash_memory_data=rspi_flash)
-with open("controller.bin", 'rb') as lspi_flash_file:
-    lspi_flash = lspi_flash_file.read()
-    lspi_flash = FlashMemory(spi_flash_memory_data=lspi_flash)
-
-
-
 
 class ControllerState:
     def __init__(self, protocol, controller: Controller, spi_flash: FlashMemory = None):
@@ -26,19 +14,15 @@ class ControllerState:
 
         self.button_state = ButtonState(controller)
 
-
-
-
         # create left stick state
         self.l_stick_state = self.r_stick_state = None
         if controller in (Controller.PRO_CONTROLLER, Controller.JOYCON_L):
             # load calibration data from memory
-            print(" [+] Left analog stick calibrated.")
             calibration = None
-            if lspi_flash is not None:
-                calibration_data = lspi_flash.get_user_l_stick_calibration()
+            if spi_flash is not None:
+                calibration_data = spi_flash.get_user_l_stick_calibration()
                 if calibration_data is None:
-                    calibration_data = lspi_flash.get_factory_l_stick_calibration()
+                    calibration_data = spi_flash.get_factory_l_stick_calibration()
                 calibration = LeftStickCalibration.from_bytes(calibration_data)
 
             self.l_stick_state = StickState(calibration=calibration)
@@ -46,24 +30,29 @@ class ControllerState:
         # create right stick state
         if controller in (Controller.PRO_CONTROLLER, Controller.JOYCON_R):
             # load calibration data from memory
-            print(" [+] Right analog stick calibrated.")
             calibration = None
-            if rspi_flash is not None:
-                calibration_data = rspi_flash.get_user_r_stick_calibration()
+            if spi_flash is not None:
+                calibration_data = spi_flash.get_user_r_stick_calibration()
                 if calibration_data is None:
-                    calibration_data = rspi_flash.get_factory_r_stick_calibration()
+                    calibration_data = spi_flash.get_factory_r_stick_calibration()
                 calibration = RightStickCalibration.from_bytes(calibration_data)
 
             self.r_stick_state = StickState(calibration=calibration)
 
         self.sig_is_send = asyncio.Event()
 
+    def get_controller(self):
+        return self._controller
+
     def get_flash_memory(self):
         return self._spi_flash
 
     async def send(self):
-        self.sig_is_send.clear()
-        await self.sig_is_send.wait()
+        """
+        Invokes protocol.send_controller_state(). Returns after the controller state was send.
+        Raises NotConnected exception if the connection was lost.
+        """
+        await self._protocol.send_controller_state()
 
     async def connect(self):
         """
